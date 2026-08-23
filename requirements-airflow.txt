@@ -1,0 +1,11 @@
+﻿cloudscraper
+pandas
+requests
+beautifulsoup4
+lxml
+sqlalchemy
+psycopg2-binary
+python-dotenv
+google-cloud-bigquery
+google-cloud-storage
+dbt-bigquery

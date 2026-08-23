@@ -1,0 +1,74 @@
+version: 2
+
+models:
+  - name: stg_epra_fuel_prices
+    description: "Cleaned EPRA fuel price data sourced from raw BigQuery layer."
+    columns:
+      - name: effective_from
+        tests:
+          - not_null
+      - name: effective_to
+        tests:
+          - not_null
+      - name: town
+        tests:
+          - not_null
+      - name: super_pms
+        tests:
+          - not_null
+      - name: diesel_ago
+        tests:
+          - not_null
+      - name: kerosene_ik
+        tests:
+          - not_null
+
+  - name: dim_location
+    description: "Unique EPRA pricing locations."
+    columns:
+      - name: location_key
+        tests:
+          - not_null
+          - unique
+      - name: town
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_fuel
+    columns:
+      - name: fuel_key
+        tests:
+          - not_null
+          - unique
+      - name: fuel_code
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_date
+    columns:
+      - name: date_key
+        tests:
+          - not_null
+          - unique
+      - name: full_date
+        tests:
+          - not_null
+          - unique
+
+  - name: fact_fuel_prices
+    description: "Analytical fact table containing one price observation per location, fuel type, and effective period."
+    columns:
+      - name: date_key
+        tests:
+          - not_null
+      - name: location_key
+        tests:
+          - not_null
+      - name: fuel_key
+        tests:
+          - not_null
+      - name: price
+        tests:
+          - not_null

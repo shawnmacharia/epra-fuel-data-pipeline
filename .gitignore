@@ -1,0 +1,44 @@
+﻿# ENVIRONMENT & CREDENTIALS
+.env
+.env.*
+!.env.example
+credentials/
+*.json
+!package.json
+
+# VIRTUAL ENVIRONMENTS
+.venv/
+.venv-dbt/
+venv/
+env/
+
+# DATA & LOGS
+data/raw/
+data/intermediate/
+logs/
+*.log
+
+# DBT
+target/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+
+# POWER BI / OS / IDE
+*.pbi/
+*.pbip/Cache/
+.vscode/
+.DS_Store
+Thumbs.db
+
+
+# Python cache & compiled files
+__pycache__/
+*.pyc
+
+# Local dbt user profiles & temporary configs
+.user.yml
+dbt/profiles/
+
+# Scraped web page asset subdirectories
+*_files/

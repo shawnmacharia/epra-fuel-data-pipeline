@@ -1,0 +1,190 @@
+services:
+  # ========================================================
+  # APPLICATION POSTGRESQL
+  # ========================================================
+
+  postgres:
+    image: postgres:16
+    container_name: epra_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: epra_dw
+      POSTGRES_USER: epra_user
+      POSTGRES_PASSWORD: epra_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U epra_user -d epra_dw"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================================
+  # AIRFLOW DATABASE
+  # ========================================================
+
+  airflow-postgres:
+    image: postgres:16
+    container_name: airflow_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================================
+  # AIRFLOW INIT
+  # ========================================================
+
+  airflow-init:
+    build:
+      context: .
+      dockerfile: airflow/Dockerfile
+    container_name: airflow_init
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__SECRET_KEY: epra-local-secret-key
+      PYTHONPATH: /opt/airflow
+      GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/credentials/epra-airflow.json
+      POSTGRES_HOST: epra_postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: epra_dw
+      POSTGRES_USER: epra_user
+      POSTGRES_PASSWORD: epra_password
+      GCP_PROJECT_ID: epra-fuel-data-platform
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
+      - ./credentials:/opt/airflow/credentials:ro
+      - ./config.py:/opt/airflow/config.py
+      - ./.env:/opt/airflow/.env
+      - ./epra_warehouse:/opt/airflow/dbt/epra_warehouse
+      - ./dbt/profiles:/opt/airflow/dbt/profiles
+    command:
+      - bash
+      - -c
+      - |
+        airflow db migrate &&
+        airflow users create \
+          --username admin \
+          --password admin \
+          --firstname Airflow \
+          --lastname Admin \
+          --role Admin \
+          --email admin@example.com || true
+
+  # ========================================================
+  # AIRFLOW WEBSERVER
+  # ========================================================
+
+  airflow-webserver:
+    build:
+      context: .
+      dockerfile: airflow/Dockerfile
+    container_name: airflow_webserver
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      airflow-postgres:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__SECRET_KEY: epra-local-secret-key
+      PYTHONPATH: /opt/airflow
+      GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/credentials/epra-airflow.json
+      POSTGRES_HOST: epra_postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: epra_dw
+      POSTGRES_USER: epra_user
+      POSTGRES_PASSWORD: epra_password
+      GCP_PROJECT_ID: epra-fuel-data-platform
+    ports:
+      - "8090:8080"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
+      - ./credentials:/opt/airflow/credentials:ro
+      - ./config.py:/opt/airflow/config.py
+      - ./.env:/opt/airflow/.env
+      - ./epra_warehouse:/opt/airflow/dbt/epra_warehouse
+      - ./dbt/profiles:/opt/airflow/dbt/profiles
+    command:
+      - webserver
+
+  # ========================================================
+  # AIRFLOW SCHEDULER
+  # ========================================================
+
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: airflow/Dockerfile
+    container_name: airflow_scheduler
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      airflow-postgres:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__SECRET_KEY: epra-local-secret-key
+      PYTHONPATH: /opt/airflow
+      GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/credentials/epra-airflow.json
+      POSTGRES_HOST: epra_postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: epra_dw
+      POSTGRES_USER: epra_user
+      POSTGRES_PASSWORD: epra_password
+      GCP_PROJECT_ID: epra-fuel-data-platform
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./src:/opt/airflow/src
+      - ./data:/opt/airflow/data
+      - ./credentials:/opt/airflow/credentials:ro
+      - ./config.py:/opt/airflow/config.py
+      - ./.env:/opt/airflow/.env
+      - ./epra_warehouse:/opt/airflow/dbt/epra_warehouse
+      - ./dbt/profiles:/opt/airflow/dbt/profiles
+    command:
+      - scheduler
+
+volumes:
+  postgres_data:
+  airflow_postgres_data:
