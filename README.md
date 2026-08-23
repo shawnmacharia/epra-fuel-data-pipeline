@@ -1,4 +1,3 @@
-````markdown
 <div align="center">
 
 # EPRA Fuel Intelligence
@@ -40,10 +39,10 @@ _Interactive Power BI executive overview featuring core KPI metrics, EPRA step-l
 
 ## What this project demonstrates
 
-| Area                         | What's implemented                                                                                                                                         |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Area                         | What's implemented                                                                                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Data extraction**          | Resilient web scraping (`requests` + `BeautifulSoup`) with a local-sample fallback for offline development                                                 |
-| **ETL / ELT design**         | Clean separation of extract → transform → validate → load stages, each independently testable                                                              |
+| **ETL / ELT design**         | Clean separation of extract → transform → validate → load stages, each independently testable                                                             |
 | **Data quality engineering** | Automated checks for nulls, duplicates, positive prices, valid date ranges, and referential integrity — pipeline fails loudly rather than loading bad data |
 | **Infrastructure as code**   | Multi-service `docker-compose.yml` (Postgres, Airflow webserver/scheduler/metadata DB) — fully reproducible from a clean machine                           |
 | **Workflow orchestration**   | Apache Airflow DAG with task-level retries, dependency chaining, and a monthly schedule aligned to EPRA's actual publication cadence                       |
@@ -69,7 +68,6 @@ flowchart TD
     style A fill:#F7E9DC,stroke:#D46A54
     style I fill:#E8977B,stroke:#D46A54,color:#fff
 ```
-````
 
 ---
 
@@ -106,7 +104,6 @@ erDiagram
         int fuel_key FK
         decimal price
     }
-
 ```
 
 **Grain:** One fuel price observation, for one location, for one fuel type, for one effective pricing period.
@@ -116,7 +113,7 @@ erDiagram
 ## Tech Stack
 
 | Layer               | Technology                          |
-| ------------------- | ----------------------------------- |
+| -------------------- | ------------------------------------ |
 | Extraction          | Python, `requests`, `BeautifulSoup` |
 | Exploration         | Jupyter Notebook                    |
 | Processing          | Pandas                              |
@@ -135,7 +132,7 @@ erDiagram
 Every load is validated before it's trusted downstream:
 
 - No null values in required fields
-- No duplicate rows at the fact grain (`effective_from`, `effective_to`, `town`, `fuel_type`)
+- No duplicate rows at the fact grain ( `town`, `fuel_type`)
 - All prices strictly positive
 - Valid, non-overlapping effective date ranges
 - Referential integrity against `dim_location` and `dim_fuel`
@@ -150,10 +147,9 @@ epra-fuel-data-pipeline/
 ├── airflow/
 │   └── dags/
 │       └── epra_fuel_prices_dag.py
-├── credentials/          # [Ignored by Git]
+├── credentials/               # [Ignored by Git]
 ├── data/
-├── dbt/
-├── epra_warehouse/
+├── epra_warehouse/            # dbt project
 ├── notebooks/
 ├── src/
 │   ├── epra_extractor.py
@@ -168,7 +164,6 @@ epra-fuel-data-pipeline/
 ├── requirements.txt
 ├── .env.example
 └── README.md
-
 ```
 
 ---
@@ -178,9 +173,8 @@ epra-fuel-data-pipeline/
 **1. Clone and enter the project**
 
 ```bash
-git clone [https://github.com/shawnmacharia/epra-fuel-data-pipeline.git](https://github.com/shawnmacharia/epra-fuel-data-pipeline.git)
+git clone https://github.com/shawnmacharia/epra-fuel-data-pipeline.git
 cd epra-fuel-data-pipeline
-
 ```
 
 **2. Create and activate a virtual environment**
@@ -188,21 +182,18 @@ cd epra-fuel-data-pipeline
 ```bash
 python -m venv .venv
 .venv\Scripts\Activate.ps1        # Windows PowerShell
-
 ```
 
 **3. Install dependencies**
 
 ```bash
 pip install -r requirements.txt
-
 ```
 
 **4. Configure environment variables**
 
 ```bash
 cp .env.example .env
-
 ```
 
 Fill in your own values. **Never commit** `.env`, GCP service-account credentials, passwords, or API keys.
@@ -212,18 +203,17 @@ Fill in your own values. **Never commit** `.env`, GCP service-account credential
 ```bash
 docker compose up -d
 docker compose ps      # confirm every service is Up/healthy
-
 ```
 
 **6. Run the pipeline**
 
 ```bash
 python -m src.pipeline
-
 ```
 
 **7. Orchestrate via Airflow**
-Open `http://localhost:8080`, trigger `epra_fuel_prices_dag`.
+
+Open `http://localhost:8080`, trigger the `epra_fuel_prices_pipeline` DAG.
 
 **8. Build the warehouse layer**
 
@@ -231,7 +221,6 @@ Open `http://localhost:8080`, trigger `epra_fuel_prices_dag`.
 cd epra_warehouse
 dbt debug
 dbt build
-
 ```
 
 ---
@@ -273,7 +262,3 @@ Data Analyst / Data Engineer
 ## Disclaimer
 
 This project is built for educational and portfolio purposes. Source data belongs to the Energy and Petroleum Regulatory Authority (EPRA) and should be used according to their terms.
-
-```
-
-```
