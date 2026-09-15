@@ -4,6 +4,7 @@ import pandas as pd
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
+from airflow.models import Variable
 
 # File persistence paths across Airflow tasks
 DATA_DIR = "/opt/airflow/data"
@@ -102,12 +103,12 @@ default_args = {
 with DAG(
     dag_id="epra_fuel_prices_pipeline",
     default_args=default_args,
-    description="EPRA Fuel Prices Pipeline: Scraping -> PostgreSQL -> BigQuery -> dbt",
-    schedule_interval="@monthly",
-    start_date=datetime(2026, 1, 1),
+    description="EPRA Fuel Prices Pipeline: Daily extraction from 15th to 14th of each month for Power BI updates",
+    schedule_interval="0 0 15-31 * *",  # Runs daily at midnight from 15th to 31st of each month
+    start_date=datetime(2026, 1, 15),  # Start from January 15
     catchup=False,
     max_active_runs=1,
-    tags=["EPRA", "fuel", "data-engineering"],
+    tags=["EPRA", "fuel", "data-engineering", "daily"],
 ) as dag:
 
     extract_epra = PythonOperator(
