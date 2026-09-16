@@ -12,9 +12,10 @@ credentials/
 venv/
 env/
 
-# DATA & LOGS
+# DATA & LOGS (exclude raw data files, keep only schemas)
 data/raw/
 data/intermediate/
+data/*.csv
 logs/
 *.log
 
@@ -23,6 +24,7 @@ target/
 dbt/target/
 dbt/logs/
 dbt/dbt_packages/
+dbt/profiles/
 
 # POWER BI / OS / IDE
 *.pbi/
@@ -31,14 +33,18 @@ dbt/dbt_packages/
 .DS_Store
 Thumbs.db
 
-
 # Python cache & compiled files
 __pycache__/
 *.pyc
 
 # Local dbt user profiles & temporary configs
 .user.yml
-dbt/profiles/
 
 # Scraped web page asset subdirectories
 *_files/
+
+# Test & debug files
+test_*.py
+debug_*.py
+backfill_*.py
+*_test.py
