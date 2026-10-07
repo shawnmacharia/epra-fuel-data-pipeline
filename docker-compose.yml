@@ -10,11 +10,12 @@ services:
     environment:
       POSTGRES_DB: epra_dw
       POSTGRES_USER: epra_user
-      POSTGRES_PASSWORD: epra_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${POSTGRES_PORT_PUBLISHED:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U epra_user -d epra_dw"]
       interval: 10s
@@ -32,7 +33,7 @@ services:
     environment:
       POSTGRES_DB: airflow
       POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:?Set AIRFLOW_DB_PASSWORD in .env}
     volumes:
       - airflow_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -56,18 +57,19 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD:?Set AIRFLOW_DB_PASSWORD in .env}@airflow-postgres:5432/airflow
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      AIRFLOW__WEBSERVER__SECRET_KEY: epra-local-secret-key
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:?Set AIRFLOW_SECRET_KEY in .env}
       PYTHONPATH: /opt/airflow
       GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/credentials/epra-airflow.json
-      POSTGRES_HOST: epra_postgres
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: epra_dw
       POSTGRES_USER: epra_user
-      POSTGRES_PASSWORD: epra_password
-      GCP_PROJECT_ID: epra-fuel-data-platform
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:?Set GCP_PROJECT_ID in .env}
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:?Set AIRFLOW_ADMIN_PASSWORD in .env}
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
@@ -75,21 +77,22 @@ services:
       - ./data:/opt/airflow/data
       - ./credentials:/opt/airflow/credentials:ro
       - ./config.py:/opt/airflow/config.py
-      - ./.env:/opt/airflow/.env
+      - ./.env:/opt/airflow/.env:ro
       - ./epra_warehouse:/opt/airflow/dbt/epra_warehouse
-      - ./dbt/profiles:/opt/airflow/dbt/profiles
+      - ./dbt/profiles.yml:/opt/airflow/dbt/profiles.yml:ro
     command:
       - bash
       - -c
       - |
         airflow db migrate &&
-        airflow users create \
-          --username admin \
-          --password admin \
-          --firstname Airflow \
-          --lastname Admin \
-          --role Admin \
-          --email admin@example.com || true
+        (airflow users list --output json | grep -q '"username": "admin"' || \
+          airflow users create \
+            --username admin \
+            --password "$$AIRFLOW_ADMIN_PASSWORD" \
+            --firstname Airflow \
+            --lastname Admin \
+            --role Admin \
+            --email admin@example.com)
 
   # ========================================================
   # AIRFLOW WEBSERVER
@@ -109,20 +112,20 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD:?Set AIRFLOW_DB_PASSWORD in .env}@airflow-postgres:5432/airflow
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      AIRFLOW__WEBSERVER__SECRET_KEY: epra-local-secret-key
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:?Set AIRFLOW_SECRET_KEY in .env}
       PYTHONPATH: /opt/airflow
       GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/credentials/epra-airflow.json
-      POSTGRES_HOST: epra_postgres
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: epra_dw
       POSTGRES_USER: epra_user
-      POSTGRES_PASSWORD: epra_password
-      GCP_PROJECT_ID: epra-fuel-data-platform
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:?Set GCP_PROJECT_ID in .env}
     ports:
-      - "8090:8080"
+      - "127.0.0.1:8090:8080"
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
@@ -130,9 +133,9 @@ services:
       - ./data:/opt/airflow/data
       - ./credentials:/opt/airflow/credentials:ro
       - ./config.py:/opt/airflow/config.py
-      - ./.env:/opt/airflow/.env
+      - ./.env:/opt/airflow/.env:ro
       - ./epra_warehouse:/opt/airflow/dbt/epra_warehouse
-      - ./dbt/profiles:/opt/airflow/dbt/profiles
+      - ./dbt/profiles.yml:/opt/airflow/dbt/profiles.yml:ro
     command:
       - webserver
 
@@ -154,18 +157,18 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD:?Set AIRFLOW_DB_PASSWORD in .env}@airflow-postgres:5432/airflow
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      AIRFLOW__WEBSERVER__SECRET_KEY: epra-local-secret-key
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:?Set AIRFLOW_SECRET_KEY in .env}
       PYTHONPATH: /opt/airflow
       GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/credentials/epra-airflow.json
-      POSTGRES_HOST: epra_postgres
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: epra_dw
       POSTGRES_USER: epra_user
-      POSTGRES_PASSWORD: epra_password
-      GCP_PROJECT_ID: epra-fuel-data-platform
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:?Set GCP_PROJECT_ID in .env}
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
@@ -173,9 +176,9 @@ services:
       - ./data:/opt/airflow/data
       - ./credentials:/opt/airflow/credentials:ro
       - ./config.py:/opt/airflow/config.py
-      - ./.env:/opt/airflow/.env
+      - ./.env:/opt/airflow/.env:ro
       - ./epra_warehouse:/opt/airflow/dbt/epra_warehouse
-      - ./dbt/profiles:/opt/airflow/dbt/profiles
+      - ./dbt/profiles.yml:/opt/airflow/dbt/profiles.yml:ro
     command:
       - scheduler
 

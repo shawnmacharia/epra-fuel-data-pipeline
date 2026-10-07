@@ -44,7 +44,5 @@ __pycache__/
 *_files/
 
 # Test & debug files
-test_*.py
 debug_*.py
 backfill_*.py
-*_test.py

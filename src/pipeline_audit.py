@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from sqlalchemy import text
 
@@ -7,6 +8,7 @@ from .postgres_loader import create_postgres_engine
 
 def start_pipeline_run(
     pipeline_name: str,
+    airflow_run_id: str | None = None,
 ) -> int:
     """
     Create a RUNNING record in the audit table.
@@ -19,6 +21,9 @@ def start_pipeline_run(
 
     engine = create_postgres_engine()
 
+    if airflow_run_id is None:
+        airflow_run_id = f"local-{uuid4()}"
+
     started_at = datetime.now(timezone.utc)
 
     with engine.begin() as connection:
@@ -28,19 +33,31 @@ def start_pipeline_run(
                 """
                 INSERT INTO audit.pipeline_runs (
                     pipeline_name,
+                    airflow_run_id,
                     started_at,
                     status
                 )
                 VALUES (
                     :pipeline_name,
+                    :airflow_run_id,
                     :started_at,
                     'RUNNING'
                 )
+                ON CONFLICT (airflow_run_id) DO UPDATE
+                SET
+                    started_at = EXCLUDED.started_at,
+                    completed_at = NULL,
+                    status = 'RUNNING',
+                    rows_extracted = 0,
+                    rows_transformed = 0,
+                    rows_loaded = 0,
+                    error_message = NULL
                 RETURNING run_id
                 """
             ),
             {
                 "pipeline_name": pipeline_name,
+                "airflow_run_id": airflow_run_id,
                 "started_at": started_at,
             },
         )
@@ -57,7 +74,7 @@ def complete_pipeline_run(
     rows_transformed: int = 0,
     rows_loaded: int = 0,
     error_message: str | None = None,
-):
+) -> None:
     """
     Complete an existing pipeline audit record.
     """

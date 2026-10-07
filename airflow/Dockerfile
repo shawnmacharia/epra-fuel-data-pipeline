@@ -2,8 +2,12 @@ FROM apache/airflow:2.10.5
 
 USER airflow
 
-# Copy the requirements file from the build context (project root) into the container
-COPY requirements-airflow.txt /tmp/requirements-airflow.txt
+ARG AIRFLOW_VERSION=2.10.5
+ARG PYTHON_VERSION=3.12
 
-# Install the Python dependencies
-RUN pip install --no-cache-dir -r /tmp/requirements-airflow.txt
+COPY requirements-airflow.txt /tmp/requirements-airflow.txt
+COPY requirements.txt /tmp/requirements.txt
+
+RUN pip install --no-cache-dir \
+	--constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt" \
+	-r /tmp/requirements-airflow.txt

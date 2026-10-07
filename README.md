@@ -19,9 +19,9 @@ _From a raw government web table to a governed analytical warehouse and a brande
 
 ---
 
-## 🎯 Project Status: PRODUCTION READY ✅
+## Project Status: Portfolio Project
 
-This is a **complete, end-to-end data engineering project** that transforms Kenya's fuel price data from EPRA's website into actionable business intelligence through a professionally built Power BI dashboard.
+This repository demonstrates an end-to-end analytics engineering workflow. The Compose stack is intended for local development and portfolio review; it is not a production deployment. Production use would still require managed secrets, deployment-specific access controls, monitoring, and recovery procedures.
 
 ---
 
@@ -29,7 +29,8 @@ This is a **complete, end-to-end data engineering project** that transforms Keny
 
 Kenya's Energy and Petroleum Regulatory Authority (EPRA) publishes pump prices for **223+ towns** every pricing cycle — but the data lives in an unindexed web table with no API, no historical archive, and no way to ask "how has this changed over time" without manually checking month by month.
 
-This project turns that raw public data into a **governed, queryable analytical asset**: 
+This project turns that raw public data into a **governed, queryable analytical asset**:
+
 - A **resilient containerized pipeline** extracts and validates data daily (15th-31st of each month, aligned to EPRA releases)
 - Data stages in **PostgreSQL** with automated quality checks
 - **Apache Airflow** orchestrates the workflow with retries and dependency chaining
@@ -44,7 +45,9 @@ This project turns that raw public data into a **governed, queryable analytical 
 **Location:** `Power Bi/EpraFuelDashboard.pbix` and `Power Bi/EpraFuelDashboard.pdf`
 
 ### Features:
+
 ✅ **8-Page Interactive Dashboard:**
+
 1. **Executive Dashboard** - KPI cards, MoM changes, affordability index, heat map
 2. **Trends & Forecasting** - Historical trends, 3-cycle forecast with confidence bands, volatility
 3. **Regional Benchmarking** - Regional heatmap, outlier detection, price variance analysis
@@ -55,11 +58,13 @@ This project turns that raw public data into a **governed, queryable analytical 
 8. **Data Quality Monitor** - Pipeline health, data completeness, anomaly tracking
 
 ### DAX Measures:
+
 - 100+ DAX measures organized in 16 categories
 - Includes: MoM changes, percentile ranks, volatility, forecasting, anomaly detection, affordability indices
-- Real-time refresh from BigQuery (daily, 15th-31st of each month)
+- Scheduled refresh from BigQuery during the monthly pricing cycle
 
 ### Interactivity:
+
 - Multi-level filtering (Fuel Type, Region, Town, Date Range)
 - Drill-through pages for detailed analysis
 - Advanced tooltips with sparklines
@@ -131,34 +136,34 @@ erDiagram
 
 ## ✨ What This Project Demonstrates
 
-| Area | Implementation |
-|------|-----------------|
-| **Data Extraction** | Resilient web scraping (cloudscraper + BeautifulSoup) with fallback to sample data |
-| **ETL/ELT Design** | Clean separation: Extract → Transform → Validate → Load (each independently testable) |
-| **Data Quality** | Automated null/duplicate/range checks; idempotent upserts; referential integrity |
-| **IaC** | Multi-container Docker Compose (Postgres, Airflow webserver/scheduler/metadata DB) |
-| **Orchestration** | Apache Airflow DAG with task retries, dependency chaining, daily schedule (15th-31st) |
-| **Cloud Warehouse** | Google BigQuery with time partitioning and clustering for performance |
-| **ELT Modeling** | dbt Core star schema with automated dbt tests |
-| **BI Development** | Production-grade Power BI: custom theme, 100+ DAX measures, multi-page drill-through |
-| **Network Optimization** | Removed DNS overrides for proper cloudscraper firewall bypass |
-| **Continuous Refresh** | DAG triggers daily during pricing window; Power BI refreshes automatically |
+| Area                     | Implementation                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------- |
+| **Data Extraction**      | Resilient web scraping (cloudscraper + BeautifulSoup) with fallback to sample data    |
+| **ETL/ELT Design**       | Clean separation: Extract → Transform → Validate → Load (each independently testable) |
+| **Data Quality**         | Automated null/duplicate/range checks; idempotent upserts; referential integrity      |
+| **IaC**                  | Multi-container Docker Compose (Postgres, Airflow webserver/scheduler/metadata DB)    |
+| **Orchestration**        | Apache Airflow DAG with task retries, dependency chaining, daily schedule (15th-31st) |
+| **Cloud Warehouse**      | Google BigQuery with time partitioning and clustering for performance                 |
+| **ELT Modeling**         | dbt Core star schema with automated dbt tests                                         |
+| **BI Development**       | Production-grade Power BI: custom theme, 100+ DAX measures, multi-page drill-through  |
+| **Network Optimization** | Removed DNS overrides for proper cloudscraper firewall bypass                         |
+| **Continuous Refresh**   | DAG triggers daily during pricing window; Power BI refreshes automatically            |
 
 ---
 
 ## 🔧 Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Extraction** | Python, cloudscraper, BeautifulSoup |
-| **Processing** | Pandas, NumPy |
-| **Staging** | PostgreSQL 16 |
-| **Orchestration** | Apache Airflow 2.9 |
-| **Containerization** | Docker, Docker Compose |
-| **Cloud Warehouse** | Google BigQuery |
-| **Transformation** | dbt Core |
-| **BI/Analytics** | Power BI (Desktop + Service) |
-| **Version Control** | Git, GitHub |
+| Layer                | Technology                          |
+| -------------------- | ----------------------------------- |
+| **Extraction**       | Python, cloudscraper, BeautifulSoup |
+| **Processing**       | Pandas, NumPy                       |
+| **Staging**          | PostgreSQL 16                       |
+| **Orchestration**    | Apache Airflow 2.9                  |
+| **Containerization** | Docker, Docker Compose              |
+| **Cloud Warehouse**  | Google BigQuery                     |
+| **Transformation**   | dbt Core                            |
+| **BI/Analytics**     | Power BI (Desktop + Service)        |
+| **Version Control**  | Git, GitHub                         |
 
 ---
 
@@ -217,8 +222,9 @@ epra-fuel-data-pipeline/
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Docker & Docker Compose
-- Python 3.10+
+- Python 3.11+
 - GCP account with BigQuery project
 - Power BI Desktop (optional, for editing)
 
@@ -243,10 +249,14 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` with your GCP credentials:
+Replace the placeholders in `.env` with local-only passwords, a long Airflow secret key, and your GCP project ID. Use URL-safe characters in `AIRFLOW_DB_PASSWORD` because it is embedded in the Airflow database connection URL. For BigQuery access, place a service-account key at `credentials/epra-airflow.json`; that directory is git-ignored.
+
 ```
 GCP_PROJECT_ID=your-project-id
-POSTGRES_PASSWORD=your-password
+POSTGRES_PASSWORD=your-local-postgres-password
+AIRFLOW_DB_PASSWORD=your-url-safe-airflow-db-password
+AIRFLOW_SECRET_KEY=your-long-random-secret-key
+AIRFLOW_ADMIN_PASSWORD=your-local-airflow-admin-password
 ```
 
 ### 3. Start Infrastructure
@@ -256,23 +266,38 @@ docker compose up -d
 docker compose ps        # Verify all services are healthy
 ```
 
+On a new PostgreSQL volume, Compose applies `postgres/init/001_initial_schema.sql` automatically. For a database volume created before this bootstrap was added, apply it once without deleting the volume:
+
+```bash
+docker compose exec -T postgres psql -U epra_user -d epra_dw -f /docker-entrypoint-initdb.d/001_initial_schema.sql
+```
+
 ### 4. Run Pipeline Locally
 
 ```bash
 # One-time execution
 python -m src.pipeline
 
-# Or trigger via Airflow UI
-# http://localhost:8090 (admin/admin)
+# Or trigger via Airflow UI at http://localhost:8090
+# Username: admin; password: AIRFLOW_ADMIN_PASSWORD from .env
+```
+
+### Run Tests
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
 ```
 
 ### 5. Build Data Warehouse
 
 ```bash
 cd epra_warehouse
-dbt debug
-dbt build
+dbt debug --profiles-dir ../dbt
+dbt build --profiles-dir ../dbt
 ```
+
+Before running dbt locally, set `GCP_PROJECT_ID` and `GOOGLE_APPLICATION_CREDENTIALS` in the shell to the values used for the pipeline. The tracked `dbt/profiles.yml` reads these environment variables; Airflow sets them from `.env` and the mounted credentials file.
 
 ### 6. Connect Power BI
 
@@ -289,11 +314,12 @@ dbt build
 **DAG Schedule:** `0 0 15-31 * *` (Daily at midnight, 15th-31st of each month)
 
 This aligns with EPRA's pricing cycle:
+
 - **15th:** EPRA releases new prices → DAG runs and loads data
 - **16th-31st:** DAG runs daily, checks for any updates
 - **1st-14th:** No runs (old pricing cycle, awaiting next release)
 
-In production, set Power BI to refresh hourly or daily from BigQuery for real-time updates.
+Schedule Power BI refresh after the pipeline completes; the source data changes on EPRA's monthly pricing cycle, not in real time.
 
 ---
 
@@ -301,14 +327,16 @@ In production, set Power BI to refresh hourly or daily from BigQuery for real-ti
 
 Every load is validated before it reaches the warehouse:
 
-✅ No null values in required fields  
-✅ No duplicate rows at fact grain (town, fuel_type, date)  
-✅ All prices strictly positive (>0)  
-✅ Valid, non-overlapping effective date ranges  
-✅ Referential integrity against dim_location and dim_fuel  
-✅ Idempotent loads (re-running = zero duplicate rows)  
+- Required source fields are present and populated
+- No duplicate pricing-period and town keys
+- Fuel prices are non-negative
+- Effective end dates do not precede start dates
+- dbt tests check modeled grain, price values, and effective dates
+- PostgreSQL upserts make repeated loads idempotent
 
-Failed validations **stop the pipeline** and trigger alerts.
+Failed validations stop downstream tasks. Airflow run status, row counts, and failure messages are recorded in PostgreSQL.
+
+The BigQuery raw table is a snapshot rebuilt with `WRITE_TRUNCATE` from the complete PostgreSQL staging history on each run. PostgreSQL is therefore the durable history source for this design; BigQuery does not independently retain prior snapshots.
 
 ---
 
@@ -327,18 +355,21 @@ This project is a **portfolio showcase** demonstrating:
 ## 🔄 Updates & Maintenance
 
 ### Daily Refresh
+
 ```bash
 # Airflow automatically triggers 15th-31st of each month
 # No manual intervention needed
 ```
 
 ### Monthly Backfill (if needed)
+
 ```bash
 # Run historical data load
 # See epra_warehouse/README.md for dbt commands
 ```
 
 ### Power BI Refresh
+
 ```
 Power BI Service → Refresh schedule
 Set to: Daily at 2 AM (after pipeline completes at midnight)
@@ -349,6 +380,7 @@ Set to: Daily at 2 AM (after pipeline completes at midnight)
 ## 📝 Roadmap
 
 **✅ Completed**
+
 - [x] Live EPRA extraction with cloudscraper
 - [x] Pandas transformation & validation
 - [x] PostgreSQL staging layer
@@ -357,10 +389,11 @@ Set to: Daily at 2 AM (after pipeline completes at midnight)
 - [x] dbt star schema
 - [x] Power BI 8-page dashboard (100+ DAX measures)
 - [x] Network optimization (DNS fix)
-- [x] Production-ready project structure
+- [x] Local Compose setup and CI test workflow
+- [x] Automated Python tests on GitHub Actions
 
 **🚧 Future Enhancements**
-- [ ] CI/CD pipeline (GitHub Actions)
+
 - [ ] Data anomaly alerting (Slack integration)
 - [ ] Historical backfill UI
 - [ ] Cost optimization dashboard
@@ -393,4 +426,4 @@ This project is built for educational and portfolio purposes. Source data belong
 ---
 
 **Last Updated:** September 2026  
-**Status:** Production Ready ✅
+**Status:** Portfolio project for local development
